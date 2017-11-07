@@ -1,0 +1,23 @@
+FROM golang:1.8.3-alpine3.6 as gobuild
+RUN apk update && apk add git
+RUN mkdir -p /root/go
+ENV GOPATH="/root/go"
+RUN go get -u github.com/golang/dep/cmd/dep
+
+RUN mkdir -p /root/go/src/main
+WORKDIR /root/go/src/main
+COPY . .
+
+RUN $GOPATH/bin/dep ensure
+
+# what's this?
+# RUN addgroup -S databox && adduser -S -g databox databox
+
+# RUN GGO_ENABLED=0 GOOS=linux go build -a -tags netgo -installsuffix netgo -ldflags '-d -s -w -extldflags "-static"' -o app /src/app.go
+
+# WORKDIR /root
+
+EXPOSE 8080
+LABEL databox.type="driver"
+CMD ["sleep","2147483647"]
+
