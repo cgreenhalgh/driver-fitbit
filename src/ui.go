@@ -168,6 +168,8 @@ func (d *Driver) Start() chan bool {
 	//Wait for my store to become active
 	databox.WaitForStoreStatus(d.dataStoreHref)
 
+	d.registerDatasources()
+
 	d.LoadSettings()
 	
 	return serverdone

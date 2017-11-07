@@ -26,6 +26,7 @@ var dataStoreHref = os.Getenv("DATABOX_STORE_ENDPOINT")
 const STORE_TYPE = "store-json"
 
 const DS_ACTIVITY_DAY_SUMMARIES = "activity-day-summaries"
+const DS_PROFILE= "profile"
 
 const AUTH_REDIRECT_URL = "/#!/driver-fitbit/ui"
 
@@ -41,38 +42,48 @@ var oauth = OauthServiceConfig{
 	//TokenUri: "https://api.fitbit.com/oauth2/token",
 }
 
-type DaySummaries struct{}
-
-// SyncDatasource
-func (ds *DaySummaries) SyncInternal(accessToken string, d *Driver) (bool, error) {
+func SyncInternal(accessToken string, d *Driver) (bool, error) {
 	log.Printf("DaySummaries SyncInternal")
 	// TODO
 	return true,nil
 }
 
-func main() {
-	datasource := &DaySummaries{}
-	driver := MakeDriver(dataStoreHref, STORE_TYPE, "Fitbit", oauth, datasource)
-	serverdone := driver.Start()
+var datasources = []DatasourceInfo{
+	DatasourceInfo{
+		Metadata: databox.StoreMetadata{
+			Description:    "Fitbit activity day summary timeseries",
+			ContentType:    "application/json",
+			Vendor:         "Fitbit",
+			DataSourceType: "Fitbit-Activity-DaySummary",
+			DataSourceID:   DS_ACTIVITY_DAY_SUMMARIES,
+			StoreType:      STORE_TYPE,
+			IsActuator:     false,
+			Unit:           "",
+			Location:       "",
+		},
+		Timeseries: true,
+		DataStoreHref: dataStoreHref,
+	},
+	DatasourceInfo{
+		Metadata: databox.StoreMetadata{
+			Description:    "Fitbit profile",
+			ContentType:    "application/json",
+			Vendor:         "Fitbit",
+			DataSourceType: "Fitbit-Profile",
+			DataSourceID:   DS_PROFILE,
+			StoreType:      STORE_TYPE,
+			IsActuator:     false,
+			Unit:           "",
+			Location:       "",
+		},
+		Timeseries: false,
+		DataStoreHref: dataStoreHref,
+	},
+}
 
-	// register source
-	metadata := databox.StoreMetadata{
-		Description:    "Fitbit activity day summary timeseries",
-		ContentType:    "application/json",
-		Vendor:         "Fitbit",
-		DataSourceType: "Fitbit-Activity-DaySummary",
-		DataSourceID:   DS_ACTIVITY_DAY_SUMMARIES,
-		StoreType:      STORE_TYPE,
-		IsActuator:     false,
-		Unit:           "",
-		Location:       "",
-	}
-	_,err := databox.RegisterDatasource(dataStoreHref, metadata)
-	if err != nil {
-		driver.LogFatalError("Error registering activities datasource", err)
-	} else {
-		log.Printf("registered datasource %s", DS_ACTIVITY_DAY_SUMMARIES)
-	}
+func main() {
+	driver := MakeDriver(dataStoreHref, STORE_TYPE, "Fitbit", oauth, datasources)
+	serverdone := driver.Start()
 
 	//getLatestActivity()
 

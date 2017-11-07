@@ -152,13 +152,13 @@ type Driver struct{
 	// sync requests
 	syncRequests chan chan bool
 	dataStoreHref string
-	datasource SyncDatasource
+	datasources []DatasourceInfo
 	oauth OauthServiceConfig
 }
 
 // Make a driver object for this specific service
-func MakeDriver(dataStoreHref string, storeType string, serviceName string, oauth OauthServiceConfig, datasource SyncDatasource) *Driver {
-	var driver = &Driver{dataStoreHref:dataStoreHref,oauth:oauth,datasource:datasource}
+func MakeDriver(dataStoreHref string, storeType string, serviceName string, oauth OauthServiceConfig, datasources []DatasourceInfo) *Driver {
+	var driver = &Driver{dataStoreHref:dataStoreHref,oauth:oauth,datasources:datasources}
 	driver.stateKv,_ = databox.MakeStoreKeyValue_0_2_0(dataStoreHref, DS_STATE, storeType)
 	driver.settingsLock = &sync.Mutex{}
 	driver.settings = &Settings{

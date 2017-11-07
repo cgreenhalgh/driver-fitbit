@@ -15,6 +15,25 @@ Roadmap:
 
 ## Data sources
 
+#### Profile
+
+(to do)
+
+This driver downloads your profile from fitbit into a key-value in Databox. 
+- datasource type: `Fitbit-Profile`
+- store type: `store-json`
+- API: kv
+- content type: `application/json`
+- Schema: see below
+
+Profile is a JSON object with fields:
+- `displayName`
+- `fullName`
+- `offsetFromUTCMillis`
+- `timezone`
+
+This is a strict subset of the information in the "user" object from [get profile](https://dev.fitbit.com/reference/web-api/user/#get-profile).
+
 ### Daily Activity Summary
 
 (to do)

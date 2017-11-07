@@ -3,7 +3,7 @@ package main
 import(
 	"log"
 	//"sync"
-	"time"
+	//"time"
 )
 
 // Synchronization worker internals
@@ -34,7 +34,8 @@ func (d *Driver) syncWorkerServer() {
 			log.Print("Sync (internal)...")
 			d.settingsLock.Lock()
 			d.settings.LastSyncStatus = SYNC_ACTIVE
-			res, _ := d.datasource.SyncInternal(accessToken, d)
+			d.settingsLock.Unlock()
+			/*res, _ := d.datasource.SyncInternal(accessToken, d)
 			if res {
 				d.settings.LastSyncStatus = SYNC_SUCCESS
 				now := time.Now()
@@ -43,7 +44,10 @@ func (d *Driver) syncWorkerServer() {
 				d.SaveState()
 			} else {
 				d.settings.LastSyncStatus = SYNC_FAILURE
-			}
+			}*/
+			res := false
+			d.settingsLock.Lock()
+			d.settings.LastSyncStatus = SYNC_FAILURE
 			d.settingsLock.Unlock()
 			// signal done
 			if req != nil {
