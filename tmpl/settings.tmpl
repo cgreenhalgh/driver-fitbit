@@ -16,7 +16,7 @@
     <h1>{{.ServiceName}} Driver</h1>
 
     {{ if .Error }} <p>Error: {{ .Error }}</p> {{ end }}
-    <script>var authUri="{{.AuthUri}}client_id={{.ClientID}}&"</script>
+    <script>var authUri="{{.AuthUri}}&client_id={{.ClientID}}&"</script>
 
     <table><tbody>
     <tr><td colspan="2"><input value="Refresh" onclick="return reload(event);" type="button"></td></tr>
@@ -24,15 +24,14 @@
     <tr><td colspan="2"><h2>Sync Data</h2></td></tr>
     <tr><td>Sync status:</td><td>{{.LastSyncStatus}}: <script>var SST=["IDLE","ACTIVE","FAILURE","SUCCESS"]; document.write(SST[{{.LastSyncStatus}}]);</script></td></tr>
 	<tr><td>Last sync:</td><td>{{ .LastSync }}</tr></td>
-	<tr><td>Latest activity:</td><td>{{ if .LatestActivity }}{{ .LatestActivity.Name}} at {{ .LatestActivity.StartDate }}{{ end }}</td></tr>
-    <tr><td colspan="2">	
+	<tr><td colspan="2">	
 	{{ if .Authorized }} <input type="button" id="poll" value="Sync data from {{.ServiceName}}" onclick="return doSync(event);"> {{ end }} 
 	</td></tr>
 
     <tr><td colspan="2"><h2>User Authorization</h2></td></tr>
     <tr><td>Status:</td><td>{{.Status}}: <script>var ST=["STARTING","FATAL","UNAUTHORIZED","OK"]; document.write(ST[{{.Status}}]);</script></td></tr>
-    <tr><td>Athlete ID</td><td>{{.AthleteID}}</td></tr>
-    <tr><td>Name</td><td>{{.Firstname}} {{.Lastname}}</td></tr>
+    <tr><td>User ID</td><td>{{.UserID}}</td></tr>
+    <tr><td>User Name</td><td>{{.UserName}}</td></tr>
     <tr><td colspan="2"><input type="button" id="linkAccount" value="Link to {{.ServiceName}} account"></td></tr>
     <tr><td colspan="2"><em>Note: linking to a new {{.ServiceName}} account will only work from a local browser on the machine running Databox.</em></td></tr>
     

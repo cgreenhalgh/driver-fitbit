@@ -7,10 +7,7 @@ $( '#linkAccount' ).on('click', function(event) {
 	event.preventDefault();
 	console.log('open '+authUri+' parent='+window.parent.location.href+' (location='+location.href+')');
 	// databox pages don't pass through parameters to driver view
-	var directUri = String(window.parent.location.href).replace('#!/', '');
-	var ix = directUri.indexOf('?');
-	if (ix>=0) { directUri = directUri.substring(0,ix); }
-	window.parent.location.href = authUri+'redirect_uri='+encodeURIComponent(directUri +'/auth_callback');
+	window.parent.location.href = authUri;
 	return false;
 });
 
