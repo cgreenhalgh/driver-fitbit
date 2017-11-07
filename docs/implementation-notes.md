@@ -30,7 +30,7 @@ docker exec -it CONTAINERID /bin/sh
 
 Build and run...
 ```
-GGO_ENABLED=0 GOOS=linux go build -a -tags netgo -installsuffix netgo -ldflags '-d -s -w -extldflags "-static"' -o app src/app.go
+GGO_ENABLED=0 GOOS=linux go build -a -tags netgo -installsuffix netgo -ldflags '-d -s -w -extldflags "-static"' -o app src/*.go
 ./app
 ```
 

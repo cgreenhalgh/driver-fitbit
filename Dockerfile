@@ -12,7 +12,7 @@ WORKDIR /root/go/src/main
 ADD Gopkg.* ./
 RUN $GOPATH/bin/dep ensure -vendor-only
 ADD src src
-RUN GGO_ENABLED=0 GOOS=linux go build -a -tags netgo -installsuffix netgo -ldflags '-d -s -w -extldflags "-static"' -o app src/app.go
+RUN GGO_ENABLED=0 GOOS=linux go build -a -tags netgo -installsuffix netgo -ldflags '-d -s -w -extldflags "-static"' -o app src/*.go
 ADD . .
 
 FROM scratch

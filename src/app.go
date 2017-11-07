@@ -78,7 +78,7 @@ type OauthUris struct {
 // Note; actually using implicit grant anyway
 var oauthUris = OauthUris{ 
   AuthUri: "https://www.fitbit.com/oauth2/authorize?response_type=token&scope=profile%20activity&prompt=consent&state=oauth_callback&expires_in=31536000&", 
-  TokenUri: "https://api.fitbit.com/oauth2/token"
+  TokenUri: "https://api.fitbit.com/oauth2/token",
 }
 
 // just for defaults now
@@ -363,7 +363,7 @@ func syncInternal(accessToken string) (bool, error) {
 	log.Printf("Got %d activities", len(activities))
 	
 	storeHref, _ := databox.GetStoreURLFromDsHref(dataStoreHref)
-	dsHref := storeHref + "/" + DS_ACTIVITIES
+	dsHref := storeHref + "/" + DS_ACTIVITY_DAY_SUMMARIES
 	
 activityLoop:
 	for _,activity := range activities {

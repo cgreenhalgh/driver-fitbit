@@ -70,7 +70,7 @@ give access to intra-day data.
 
 You can link the driver to your own fitbit app by:
 
-1. Creating a personal [fitbit app](https://dev.fitbit.com/apps/new). For the authorization callback domain put TBD.
+1. Creating a personal [fitbit app](https://dev.fitbit.com/apps/new). For the authorization callback domain put 'http://localhost:8989/driver-fitbit/ui/auth_callback'.
 1. In the driver UI replacing the `client_id` (?and `client_secret`) with the values for your new app and hitting "Configure"
 1. In the driver UI "Link to Strava account" again.
 
