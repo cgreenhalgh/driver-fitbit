@@ -62,7 +62,7 @@ func main() {
 		Vendor:         "Fitbit",
 		DataSourceType: "Fitbit-Activity-DaySummary",
 		DataSourceID:   DS_ACTIVITY_DAY_SUMMARIES,
-		StoreType:      "store-json",
+		StoreType:      STORE_TYPE,
 		IsActuator:     false,
 		Unit:           "",
 		Location:       "",

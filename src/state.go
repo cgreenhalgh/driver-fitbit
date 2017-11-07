@@ -42,6 +42,7 @@ type Settings struct {
   Status DriverStatus
   Error string // if there is an error
   ClientID string
+  ImplicitGrant bool
   AuthUri string
   Authorized bool
   UserID string 
@@ -163,6 +164,7 @@ func MakeDriver(dataStoreHref string, storeType string, serviceName string, oaut
 	driver.settings = &Settings{
 		ServiceName:serviceName,
 		AuthUri:oauth.AuthUri,
+		ImplicitGrant:oauth.ImplicitGrant,
 		Status: DRIVER_STARTING,
 		Authorized:false,
 		ClientID:""}

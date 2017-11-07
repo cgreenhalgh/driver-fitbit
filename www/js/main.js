@@ -36,8 +36,12 @@ function doSync(event) {
 function configure(event) {
 	var client_id = $("#client_id").val();
 	var client_secret = $('#client_secret').val();
-	if (!client_id || !client_secret) {
-		alert("Client ID and Secret must both be specified");
+	if (!client_id) {
+		alert("Client ID must be specified");
+		return false;
+	}
+	if (needsClientSecret && !client_secret) {
+		alert("Client Secret must be specified");
 		return false;
 	}
 	console.log('Configure with ID='+client_id+' and secret='+client_secret);
