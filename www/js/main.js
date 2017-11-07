@@ -3,7 +3,7 @@ $( document ).ready(function() {
     console.log( "ready!" );
 });
 
-$( '#openStrava' ).on('click', function(event) {
+$( '#linkAccount' ).on('click', function(event) {
 	event.preventDefault();
 	console.log('open '+authUri+' parent='+window.parent.location.href+' (location='+location.href+')');
 	// databox pages don't pass through parameters to driver view

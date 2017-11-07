@@ -1,72 +1,78 @@
-# databox-driver-strava
+# databox-driver-fitbit
 
-Databox driver for the Strava API
+Databox driver for the Fitbit API
 
 By Chris Greenhalgh <chris.greenhalgh@nottingham.ac.uk>,
 Copyright (C) The University of Nottingham, 2017
 
-Status: just about working
+Status: in progress (converting from strava driver)
 
 Roadmap:
-- fix driver UI to auto-update status
-- allow oauth configuration to be set from UI
+- translate from strava to fitbit
+- implement initial day summary activity support
+- more datasources (sleep, weight, intra-day activity, heartrate, intra-day heartrate)
 - support oauth from databox app (requires changes to app)
 
 ## Data sources
 
-### Activities
+### Daily Activity Summary
 
-This driver downloads your activities from Strava into a time-series in Databox. 
-- datasource ID: `activities`
+(to do)
+
+This driver downloads your daily activity summary from fitbit into a time-series in Databox. 
+- datasource type: `Fitbit-Activity-DaySummary`
 - store type: `store-json`
 - API: time-series
 - content type: `application/json`
 - Schema: see below
 
 Each activity is a JSON object with fields:
-- `id`: activity ID (strava internal ID) (int) 
-- `name`: activity name (title) (string)
-- `distance`: total distance (metres) (float)
-- `moving_time`: time moving (seconds) (int?)
-- `elapsed_time`: time elapsed (seconds) (int?)
-- `type`: activity type, e.g. "ride", "run" (string)
-- `start_date`: start date/time, e.g. "2013-08-24T00:04:12Z" (string)
-- `timezone`: local timezone for activity/athlete, e.g. "(GMT-08:00) America/Los_Angeles" (string)`
+- `date`: in format `yyyy-MM-dd` (not present in Fitbit response but added in driver)
+- `timezone`: (not present in Fitbit response; added from GetProfile response)
+- `activityCalories`: (int) 
+- `caloriesBMR`: (int)
+- `distances`: array of {activity,distance} sub-objects (activities: "tracker", "total", ...; distance km float)
+- `fairlyActiveMinutes`: (int)
+- `lightlyActiveMinutes`: (int)
+- `sedentaryMinutes`: (int)
+- `steps`: (int)
+- `veryActiveMinutes`: (int)
 
-This is strict subset of the information in the [Strava activity](http://strava.github.io/api/v3/activities/).
+This is (except for date and timezone) a strict subset of the information in the [Fitbit Daily summary](https://dev.fitbit.com/reference/web-api/activity/#get-daily-activity-summary).
 
-The store timestamp is the activity `start_date` (ms since UNIX epoch, UTC).
+The store timestamp is the day's date, T12:00:00 (i.e. midday), in their preferred timezone.
 
 ## Install / use
 
 To install from local build:
 ```
-./databox-install-component cgreenhalgh/databox-driver-strava
+./databox-install-component cgreenhalgh/driver-fitbit
 ```
 
 ### Configure
 
 Note: currently authorizing the driver will only work from a browser on the machine running the databox, not from the databox app or from a remote browser.
 
-1. In the Databox UI install the driver, called "Strava". 
-1. Open the driver UI and "Link to Strava account"; log into Strava if required and then authorize access.
+1. In the Databox UI install the driver, called "Fitbit". 
+1. Open the driver UI and "Link to Fitbit account"; log into Strava if required and then authorize access.
 1. (Probably best for now to re-open the databox UI, or you can switch to the app)
-1. In the driver UI "Sync data from strava"; wait a few seconds and reload the page to see the updated status (at some point it will be made to auto-update)
+1. In the driver UI "Sync data from Fitbit"; wait a few seconds and reload the page to see the updated status (at some point it will be made to auto-update)
 
-See the [activity summary app](https://github.com/cgreenhalgh/databox-app-activity-summary) for a possible way to view your strava activity data.
+See the [activity summary app](https://github.com/cgreenhalgh/databox-app-activity-summary) for a possible way to view your activity data (in the future).
 
-### Using a personal strava app
+### Using a personal Fitbit app
 
-Note that the driver by default authenticates with a test/demo strava 
-app (NB not databox app). Each strava app has rate limits that apply 
-to total use across all concurrent users. So if other people are using
-it a lot then you may not be able to download new activities.
+Note that the driver by default authenticates with a test/demo fitbit
+app (NB not databox app). This app does NOT have access to a user's
+intra-day activity or heartrate data. But if you create your own 
+"Personal" fitbit app and link to that then that will (potentially)
+give access to intra-day data.
 
-You can link the driver to your own strava app by:
+You can link the driver to your own fitbit app by:
 
-1. Creating a [strava app](https://www.strava.com/settings/api). For the authorization callback domain put 'localhost'.
-1. Editing `databox-driver-strava/etc/oauth.json` and replacing the `client_id` and `client_secret` with the [values for your new app](https://www.strava.com/settings/api) ("Client ID", "Client Secret"; make sure you show them first!)
-1. Open the driver UI and "Link to Strava account" again.
+1. Creating a personal [fitbit app](https://dev.fitbit.com/apps/new). For the authorization callback domain put TBD.
+1. In the driver UI replacing the `client_id` (?and `client_secret`) with the values for your new app and hitting "Configure"
+1. In the driver UI "Link to Strava account" again.
 
 ## Implementation notes
 

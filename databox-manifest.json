@@ -1,22 +1,22 @@
 {
 	"manifest-version": 1,
 
-	"name": "databox-driver-strava",
+	"name": "driver-fitbit",
 	"databox-type": "driver",
 	"version": "0.1.0",
 
-	"description": "A driver for the Strava API.",
+	"description": "A driver for the Fitbit API.",
 	"author": "Chris Greenhalgh <chris.greenhalgh@nottingham.ac.uk>",
 	"license": "MIT",
 	"tags": [
-		"strava",
+		"fitbit",
 		"gloang"
 	],
 
-	"homepage": "https://github.com/cgreenhalgh/databox-driver-strava",
+	"homepage": "https://github.com/cgreenhalgh/driver-fitbit",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cgreenhalgh/databox-driver-strava"
+		"url": "git+https://github.com/cgreenhalgh/driver-fitbit"
 	},
 
 

@@ -25,13 +25,13 @@ var dataStoreHref = os.Getenv("DATABOX_STORE_ENDPOINT")
 // Note: must match manifest!
 const STORE_TYPE = "store-json"
 
-const DS_ACTIVITIES = "activities"
+const DS_ACTIVITY_DAY_SUMMARIES = "activity-day-summaries"
 const DS_STATE = "state"
 
-const AUTH_REDIRECT_URL = "/#!/databox-driver-strava/ui"
+const AUTH_REDIRECT_URL = "/#!/driver-fitbit/ui"
 
 // TODO any likely errors?!
-var activitiesTs,_ = databox.MakeStoreTimeSeries_0_2_0(dataStoreHref, DS_ACTIVITIES, STORE_TYPE)
+var activitiesTs,_ = databox.MakeStoreTimeSeries_0_2_0(dataStoreHref, DS_ACTIVITY_DAY_SUMMARIES, STORE_TYPE)
 var stateKv,_ = databox.MakeStoreKeyValue_0_2_0(dataStoreHref, DS_STATE, STORE_TYPE)
 
 // startup state
@@ -75,7 +75,11 @@ type OauthUris struct {
   TokenUri string
 }
 
-var oauthUris = OauthUris{ AuthUri: "https://www.strava.com/oauth/authorize?response_type=code&scope=view_private&approval_prompt=force&state=oauth_callback&", TokenUri: "https://www.strava.com/oauth/token"}
+// Note; actually using implicit grant anyway
+var oauthUris = OauthUris{ 
+  AuthUri: "https://www.fitbit.com/oauth2/authorize?response_type=token&scope=profile%20activity&prompt=consent&state=oauth_callback&expires_in=31536000&", 
+  TokenUri: "https://api.fitbit.com/oauth2/token"
+}
 
 // just for defaults now
 type OauthConfig struct {
@@ -104,6 +108,7 @@ const (
 )
 
 type Settings struct {
+  ServiceName string
   Status DriverStatus
   Error string // if there is an error
   ClientID string
@@ -155,7 +160,7 @@ func (state *State) Save() {
 }
 
 var settingsLock = &sync.Mutex{}
-var settings = Settings{Status: DRIVER_STARTING, AuthUri: oauthUris.AuthUri, Authorized:false, ClientID:""}
+var settings = Settings{ServiceName:"Fitbit",Status: DRIVER_STARTING, AuthUri: oauthUris.AuthUri, Authorized:false, ClientID:""}
 var state = State{}
 
 type Athlete struct {
@@ -319,7 +324,7 @@ type DataStoreEntry struct {
 
 type StravaActivityDSE struct {
 	Timestamp float64 `json:"timestamp"`
-	//*DataStoreEntry
+	// *DataStoreEntry
 	Data StravaActivity `json:"data"`
 }
 
@@ -332,6 +337,7 @@ func syncInternal(accessToken string) (bool, error) {
 		return false, err
 	}
 	client := &http.Client{}
+	// Fitbit uses "Basic" Authorization; Strava uses "Bearer"
 	req.Header.Add("Authorization", "Bearer "+accessToken)
 	res, err := client.Do(req)
 	if err != nil {
@@ -565,11 +571,11 @@ func main() {
 
 	// register source
 	metadata := databox.StoreMetadata{
-		Description:    "Strava activities timeseries",
+		Description:    "Fitbit activity day summary timeseries",
 		ContentType:    "application/json",
-		Vendor:         "Strava",
-		DataSourceType: "Strava-Activity",
-		DataSourceID:   DS_ACTIVITIES,
+		Vendor:         "Fitbit",
+		DataSourceType: "Fitbit-Activity-DaySummary",
+		DataSourceID:   DS_ACTIVITY_DAY_SUMMARIES,
 		StoreType:      "store-json",
 		IsActuator:     false,
 		Unit:           "",
@@ -579,7 +585,7 @@ func main() {
 	if err != nil {
 		logFatalError("Error registering activities datasource", err)
 	} else {
-		log.Printf("registered datasource %s", DS_ACTIVITIES)
+		log.Printf("registered datasource %s", DS_ACTIVITY_DAY_SUMMARIES)
 	}
 
 	getLatestActivity()
