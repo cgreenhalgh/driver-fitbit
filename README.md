@@ -5,10 +5,9 @@ Databox driver for the Fitbit API
 By Chris Greenhalgh <chris.greenhalgh@nottingham.ac.uk>,
 Copyright (C) The University of Nottingham, 2017
 
-Status: in progress (converting from strava driver)
+Status: syncs profile (only)
 
 Roadmap:
-- translate from strava to fitbit
 - implement initial day summary activity support
 - more datasources (sleep, weight, intra-day activity, heartrate, intra-day heartrate)
 - support oauth from databox app (requires changes to app)
@@ -16,8 +15,6 @@ Roadmap:
 ## Data sources
 
 #### Profile
-
-(to do)
 
 This driver downloads your profile from fitbit into a key-value in Databox. 
 - datasource type: `Fitbit-Profile`

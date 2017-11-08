@@ -64,6 +64,20 @@ type State struct {
 
 const DS_STATE = "state"
 
+// Main driver state
+type Driver struct{
+	stateKv databox.KeyValue_0_2_0
+	settingsLock *sync.Mutex
+	settings *Settings
+	state *State
+	// sync requests
+	syncRequests chan chan bool
+	dataStoreHref string
+	datasources []DatasourceInfo
+	oauth OauthServiceConfig
+	syncHandler SyncHandler
+}
+
 func (d *Driver) LoadState() {
 	data,err := d.stateKv.Read()
 	if err != nil {
@@ -143,22 +157,19 @@ func (d *Driver) LogFatalError(message string, err error) {
 	d.settingsLock.Unlock()
 }
 
-// Main driver state
-type Driver struct{
-	stateKv databox.KeyValue_0_2_0
-	settingsLock *sync.Mutex
-	settings *Settings
-	state *State
-	// sync requests
-	syncRequests chan chan bool
-	dataStoreHref string
-	datasources []DatasourceInfo
-	oauth OauthServiceConfig
+func (d *Driver) UpdateUser(userName string, userId string) {
+	d.settingsLock.Lock()
+	defer d.settingsLock.Unlock()
+	d.state.UserName = userName
+	d.settings.UserName = d.state.UserName
+	d.state.UserID = userId
+	d.settings.UserID = d.state.UserID
+	d.SaveState()
 }
 
 // Make a driver object for this specific service
-func MakeDriver(dataStoreHref string, storeType string, serviceName string, oauth OauthServiceConfig, datasources []DatasourceInfo) *Driver {
-	var driver = &Driver{dataStoreHref:dataStoreHref,oauth:oauth,datasources:datasources}
+func MakeDriver(dataStoreHref string, storeType string, serviceName string, oauth OauthServiceConfig, datasources []DatasourceInfo, syncHandler SyncHandler) *Driver {
+	var driver = &Driver{dataStoreHref:dataStoreHref,oauth:oauth,datasources:datasources,syncHandler:syncHandler}
 	driver.stateKv,_ = databox.MakeStoreKeyValue_0_2_0(dataStoreHref, DS_STATE, storeType)
 	driver.settingsLock = &sync.Mutex{}
 	driver.settings = &Settings{

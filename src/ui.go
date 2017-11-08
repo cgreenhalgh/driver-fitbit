@@ -131,11 +131,11 @@ func (d *Driver) handleSync(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Print("request sync...")
-	//rep := make(chan bool)
-	d.syncRequests <- nil //rep
+	rep := make(chan bool)
+	d.syncRequests <- rep
 	w.Write([]byte("true\n"))
-	//<- rep
-	//log.Print("handleSync complete");
+	<- rep
+	log.Print("handleSync complete");
 }
 
 func (d *Driver) server(c chan bool) {
@@ -168,9 +168,10 @@ func (d *Driver) Start() chan bool {
 	//Wait for my store to become active
 	databox.WaitForStoreStatus(d.dataStoreHref)
 
-	d.registerDatasources()
-
 	d.LoadSettings()
+
+	d.registerDatasources()
+	d.makeDatasourceApis()
 	
 	return serverdone
 }

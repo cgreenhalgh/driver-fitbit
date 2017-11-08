@@ -2,8 +2,7 @@ package main
 
 import(
 	"log"
-	//"sync"
-	//"time"
+	"time"
 )
 
 // Synchronization worker internals
@@ -13,10 +12,7 @@ type DataStoreEntry struct{
 	Timestamp float64 `json:"timestamp"`
 }
 
-type SyncDatasource interface{
-	SyncInternal(accessToken string, d *Driver) (bool, error)
-	//GetLatest()
-}
+type SyncHandler func(d *Driver, accessToken string) (bool, error)
 
 func (d *Driver) syncWorkerServer() {
 	for {
@@ -35,7 +31,8 @@ func (d *Driver) syncWorkerServer() {
 			d.settingsLock.Lock()
 			d.settings.LastSyncStatus = SYNC_ACTIVE
 			d.settingsLock.Unlock()
-			/*res, _ := d.datasource.SyncInternal(accessToken, d)
+			res, _ := d.syncHandler(d, accessToken)
+			d.settingsLock.Lock()
 			if res {
 				d.settings.LastSyncStatus = SYNC_SUCCESS
 				now := time.Now()
@@ -44,10 +41,7 @@ func (d *Driver) syncWorkerServer() {
 				d.SaveState()
 			} else {
 				d.settings.LastSyncStatus = SYNC_FAILURE
-			}*/
-			res := false
-			d.settingsLock.Lock()
-			d.settings.LastSyncStatus = SYNC_FAILURE
+			}
 			d.settingsLock.Unlock()
 			// signal done
 			if req != nil {

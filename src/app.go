@@ -1,8 +1,8 @@
 package main
 
 import (
-	//"encoding/json"
-	//"errors"
+	"encoding/json"
+	"errors"
 	//"fmt"
 	//"html/template"
 	//"io/ioutil"
@@ -25,13 +25,12 @@ var dataStoreHref = os.Getenv("DATABOX_STORE_ENDPOINT")
 // Note: must match manifest!
 const STORE_TYPE = "store-json"
 
+// Our data source IDs
 const DS_ACTIVITY_DAY_SUMMARIES = "activity-day-summaries"
 const DS_PROFILE= "profile"
 
+// Driver-specific redirect after Oauth back into App-style view
 const AUTH_REDIRECT_URL = "/#!/driver-fitbit/ui"
-
-// TODO any likely errors?!
-var activitiesTs,_ = databox.MakeStoreTimeSeries_0_2_0(dataStoreHref, DS_ACTIVITY_DAY_SUMMARIES, STORE_TYPE)
 
 // OauthServiceConfig
 var oauth = OauthServiceConfig{
@@ -42,12 +41,64 @@ var oauth = OauthServiceConfig{
 	//TokenUri: "https://api.fitbit.com/oauth2/token",
 }
 
-func SyncInternal(accessToken string, d *Driver) (bool, error) {
-	log.Printf("DaySummaries SyncInternal")
+// Our sync function
+func FitbitSyncHandler(d *Driver, accessToken string) (bool, error) {
+	//log.Printf("Fitbit Sync")
+	allok := true
+	var firsterr error 
+	ok,err := SyncProfile(d, accessToken)
+	allok = allok && ok
+	if firsterr == nil { firsterr = err }
 	// TODO
 	return true,nil
 }
 
+// Fitbit profile information
+type FitbitProfile struct{
+	DisplayName string `json:"displayName"`
+	FullName string `json:"fullName"`
+	OffsetFromUTCMillis int `json:"offsetFromUTCMillis"`
+	Timezone string `json:"timezone"`
+}
+
+type FitbitProfileResponse struct{
+	User FitbitProfile `json:"user"`
+}
+
+// Sync profile to KV
+func SyncProfile(d *Driver, accessToken string) (bool, error) {
+	log.Printf("Fitbit Sync Profile")
+	data,err := GetData("https://api.fitbit.com/1/user/-/profile.json", "Bearer "+accessToken)
+	if err != nil {
+		log.Printf("Error getting profile: %s", err.Error())
+		return false, err
+	}
+	var resp = FitbitProfileResponse{}
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		log.Printf("Error unmarshalling profile response: %s - %s", err.Error(), string(data))
+		return false,err
+	}
+	log.Printf("Got profile response for %s (%s), timezone %s (+%d)", resp.User.DisplayName, resp.User.FullName, resp.User.Timezone, resp.User.OffsetFromUTCMillis)
+	// update state
+	d.UpdateUser(resp.User.FullName, "-")
+	// write to store
+	ds := d.FindDatasource(DS_PROFILE)
+	value,err := json.Marshal(resp.User)
+	if err != nil {
+		log.Printf("Error marshalling profile value: %s", err.Error())
+		return false, err
+	}
+	if ds.KvApi == nil {
+		log.Printf("ERROR profile KvApi uninitialised!")
+		return false, errors.New("Internal error (profile kvapi uninitialised)")
+	}
+	ds.KvApi.Write(string(value))
+	log.Printf("Synced Profile")
+	return true, nil
+}
+
+// All of our datasources
 var datasources = []DatasourceInfo{
 	DatasourceInfo{
 		Metadata: databox.StoreMetadata{
@@ -61,7 +112,7 @@ var datasources = []DatasourceInfo{
 			Unit:           "",
 			Location:       "",
 		},
-		Timeseries: true,
+		Api: API_TIMESERIES,
 		DataStoreHref: dataStoreHref,
 	},
 	DatasourceInfo{
@@ -76,13 +127,13 @@ var datasources = []DatasourceInfo{
 			Unit:           "",
 			Location:       "",
 		},
-		Timeseries: false,
+		Api: API_KEYVALUE,
 		DataStoreHref: dataStoreHref,
 	},
 }
 
 func main() {
-	driver := MakeDriver(dataStoreHref, STORE_TYPE, "Fitbit", oauth, datasources)
+	driver := MakeDriver(dataStoreHref, STORE_TYPE, "Fitbit", oauth, datasources, FitbitSyncHandler)
 	serverdone := driver.Start()
 
 	//getLatestActivity()
