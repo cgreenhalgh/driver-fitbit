@@ -46,19 +46,17 @@ func FitbitSyncHandler(d *Driver, accessToken string) (bool, error) {
 	//log.Printf("Fitbit Sync")
 	allok := true
 	var firsterr error 
-	ok,err := SyncProfile(d, accessToken)
-	allok = allok && ok
+	profile,err := SyncProfile(d, accessToken)
+	// need profile! for timezone
+	if profile == nil {
+		return false, err
+	}
 	if firsterr == nil { firsterr = err }
-	// TODO
-	return true,nil
-}
-
-// Fitbit profile information
-type FitbitProfile struct{
-	DisplayName string `json:"displayName"`
-	FullName string `json:"fullName"`
-	OffsetFromUTCMillis int `json:"offsetFromUTCMillis"`
-	Timezone string `json:"timezone"`
+	ok,err := SyncActivities(d, accessToken, profile)
+	allok = allok && ok
+	if firsterr == nil { firsterr = err }	
+	// TODO more
+	return ok,firsterr
 }
 
 type FitbitProfileResponse struct{
@@ -66,18 +64,18 @@ type FitbitProfileResponse struct{
 }
 
 // Sync profile to KV
-func SyncProfile(d *Driver, accessToken string) (bool, error) {
+func SyncProfile(d *Driver, accessToken string) (*FitbitProfile, error) {
 	log.Printf("Fitbit Sync Profile")
 	data,err := GetData("https://api.fitbit.com/1/user/-/profile.json", "Bearer "+accessToken)
 	if err != nil {
 		log.Printf("Error getting profile: %s", err.Error())
-		return false, err
+		return nil, err
 	}
 	var resp = FitbitProfileResponse{}
 	err = json.Unmarshal(data, &resp)
 	if err != nil {
 		log.Printf("Error unmarshalling profile response: %s - %s", err.Error(), string(data))
-		return false,err
+		return nil,err
 	}
 	log.Printf("Got profile response for %s (%s), timezone %s (+%d)", resp.User.DisplayName, resp.User.FullName, resp.User.Timezone, resp.User.OffsetFromUTCMillis)
 	// update state
@@ -87,14 +85,69 @@ func SyncProfile(d *Driver, accessToken string) (bool, error) {
 	value,err := json.Marshal(resp.User)
 	if err != nil {
 		log.Printf("Error marshalling profile value: %s", err.Error())
-		return false, err
+		return nil, err
 	}
 	if ds.KvApi == nil {
 		log.Printf("ERROR profile KvApi uninitialised!")
-		return false, errors.New("Internal error (profile kvapi uninitialised)")
+		return &resp.User, errors.New("Internal error (profile kvapi uninitialised)")
 	}
 	ds.KvApi.Write(string(value))
 	log.Printf("Synced Profile")
+	return &resp.User, nil
+}
+
+// Fitbit Activities / day summary
+type FitbitActivitiesResponse struct{
+	Summary FitbitDaySummary `json:"summary"`
+	// also has activities and goals
+}
+
+// Sync DaySummary to TS
+func SyncActivities(d *Driver, accessToken string, profile *FitbitProfile) (bool, error) {
+	// have to do 1 day at a time, and what about current day changing?!
+	// TODO limit by device sync information
+	// How far back?
+	// a test day
+	return SyncOneDay("2017-11-05", d, accessToken, profile)
+}
+
+func SyncOneDay(date string, d *Driver, accessToken string, profile *FitbitProfile) (bool, error) {	
+	log.Printf("Fitbit Sync activity for %s", date)
+	data,err := GetData("https://api.fitbit.com/1/user/-/activities/date/"+date+".json", "Bearer "+accessToken)
+	if err != nil {
+		log.Printf("Error getting activity for %s: %s", date, err.Error())
+		return false, err
+	}
+	var resp = FitbitActivitiesResponse{}
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		log.Printf("Error unmarshalling activities response: %s - %s", err.Error(), string(data))
+		return false,err
+	}
+	log.Printf("Got activities response for %s, steps %d", date, resp.Summary.Steps)
+	resp.Summary.Date = date
+	// TODO: from Profile
+	resp.Summary.Timezone = profile.Timezone
+	resp.Summary.OffsetFromUTCMillis = profile.OffsetFromUTCMillis
+	// write to store
+	ds := d.FindDatasource(DS_ACTIVITY_DAY_SUMMARIES)
+	// TODO timestamp
+	dse := FitbitDaySummaryDSE{
+		Data: resp.Summary,
+		Timestamp: 0,
+	}
+	value,err := json.Marshal(dse)
+	if err != nil {
+		log.Printf("Error marshalling day summary value: %s", err.Error())
+		return false, err
+	}
+	if ds.TsApi == nil {
+		log.Printf("ERROR day summary TsApi uninitialised!")
+		return false, errors.New("Internal error (day summary tsapi uninitialised)")
+	}
+	// TODO actually store some information, checking if it is new first ?!
+//	ds.TsApi.Write(string(value))
+	log.Printf("Synced activity for %s: %s", date, string(value))
 	return true, nil
 }
 
