@@ -34,3 +34,12 @@ type FitbitDaySummaryDSE struct {
 	Data FitbitDaySummary `json:"data"`
 	Timestamp int64 `json:"timestamp"`
 }
+
+// Fitbit Device info
+type FitbitDevice struct {
+	Battery string `json:"battery"` // e.g. "High"
+	DeviceVersion string `json:"deviceVersion"` // e.g. "Charge HR"
+	Id string `json:"id"` // e.g. "12345"
+	LastSyncTime string `json:"lastSyncTime"` // e.g. "2015-07-27T17:01:39.313" - UTC or personal time?
+	Type string `json:"type"` // e.g. "TRACKER", "SCALE"
+}

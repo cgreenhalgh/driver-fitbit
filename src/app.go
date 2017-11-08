@@ -27,14 +27,15 @@ const STORE_TYPE = "store-json"
 
 // Our data source IDs
 const DS_ACTIVITY_DAY_SUMMARIES = "activity-day-summaries"
-const DS_PROFILE= "profile"
+const DS_PROFILE = "profile"
+const DS_DEVICES = "devices"
 
 // Driver-specific redirect after Oauth back into App-style view
 const AUTH_REDIRECT_URL = "/#!/driver-fitbit/ui"
 
 // OauthServiceConfig
 var oauth = OauthServiceConfig{
-	AuthUri: "https://www.fitbit.com/oauth2/authorize?response_type=token&scope=profile%20activity&prompt=consent&state=oauth_callback&expires_in=31536000&redirect_uri="+
+	AuthUri: "https://www.fitbit.com/oauth2/authorize?response_type=token&scope=profile%20activity%20settings&prompt=consent&state=oauth_callback&expires_in=31536000&redirect_uri="+
 	url.PathEscape("http://localhost:8989/driver-fitbit/ui/hash_auth_callback"),
 	ImplicitGrant: true,
 	AuthRedirectUri: AUTH_REDIRECT_URL,
@@ -52,7 +53,10 @@ func FitbitSyncHandler(d *Driver, accessToken string) (bool, error) {
 		return false, err
 	}
 	if firsterr == nil { firsterr = err }
-	ok,err := SyncActivities(d, accessToken, profile)
+	devices,err := SyncDevices(d, accessToken, profile)
+	allok = allok && (devices != nil)
+	if firsterr == nil { firsterr = err }	
+	ok,err := SyncActivities(d, accessToken, profile, devices)
 	allok = allok && ok
 	if firsterr == nil { firsterr = err }	
 	// TODO more
@@ -96,6 +100,38 @@ func SyncProfile(d *Driver, accessToken string) (*FitbitProfile, error) {
 	return &resp.User, nil
 }
 
+// Sync devices to KV
+func SyncDevices(d *Driver, accessToken string, profile *FitbitProfile) ([]FitbitDevice, error) {
+	log.Printf("Fitbit Sync Devices")
+	data,err := GetData("https://api.fitbit.com/1/user/-/devices.json", "Bearer "+accessToken)
+	if err != nil {
+		log.Printf("Error getting devices: %s", err.Error())
+		return nil, err
+	}
+	var resp = []FitbitDevice{}
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		log.Printf("Error unmarshalling devices response: %s - %s", err.Error(), string(data))
+		return nil,err
+	}
+	log.Printf("Got devices response with %d devices", len(resp))
+	// write to store
+	ds := d.FindDatasource(DS_DEVICES)
+	// could write raw data straight back
+	value,err := json.Marshal(resp)
+	if err != nil {
+		log.Printf("Error marshalling devices value: %s", err.Error())
+		return nil, err
+	}
+	if ds.KvApi == nil {
+		log.Printf("ERROR devices KvApi uninitialised!")
+		return resp, errors.New("Internal error (devices kvapi uninitialised)")
+	}
+	ds.KvApi.Write(string(value))
+	log.Printf("Synced devices: %s", string(value))
+	return resp, nil
+}
+
 // Fitbit Activities / day summary
 type FitbitActivitiesResponse struct{
 	Summary FitbitDaySummary `json:"summary"`
@@ -103,7 +139,7 @@ type FitbitActivitiesResponse struct{
 }
 
 // Sync DaySummary to TS
-func SyncActivities(d *Driver, accessToken string, profile *FitbitProfile) (bool, error) {
+func SyncActivities(d *Driver, accessToken string, profile *FitbitProfile, devices []FitbitDevice) (bool, error) {
 	// have to do 1 day at a time, and what about current day changing?!
 	// TODO limit by device sync information
 	// How far back?
@@ -175,6 +211,21 @@ var datasources = []DatasourceInfo{
 			Vendor:         "Fitbit",
 			DataSourceType: "Fitbit-Profile",
 			DataSourceID:   DS_PROFILE,
+			StoreType:      STORE_TYPE,
+			IsActuator:     false,
+			Unit:           "",
+			Location:       "",
+		},
+		Api: API_KEYVALUE,
+		DataStoreHref: dataStoreHref,
+	},
+	DatasourceInfo{
+		Metadata: databox.StoreMetadata{
+			Description:    "Fitbit devices",
+			ContentType:    "application/json",
+			Vendor:         "Fitbit",
+			DataSourceType: "Fitbit-Devices",
+			DataSourceID:   DS_DEVICES,
 			StoreType:      STORE_TYPE,
 			IsActuator:     false,
 			Unit:           "",

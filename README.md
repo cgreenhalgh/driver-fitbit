@@ -31,6 +31,24 @@ Profile is a JSON object with fields:
 
 This is a strict subset of the information in the "user" object from [get profile](https://dev.fitbit.com/reference/web-api/user/#get-profile).
 
+### Devices
+
+This downloads device info from fitbit into a key-value in Databox.
+- datasource type: `Fitbit-Devices`
+- store type: `store-json`
+- API: kv
+- content type: `application/json`
+- Schema: see below
+
+Profile is a JSON array containing a JSON object per user device with fields:
+- `battery`, e.g. "High"
+- `deviceVersion`, e.g. "Charge HR"
+- `id`, e.g. "12345"
+- `lastSyncTime`, e.g. "2015-07-27T17:01:39.313"
+- `type`, e.g. "TRACKER", "SCALE"
+
+This is the information from [get devices](https://dev.fitbit.com/reference/web-api/devices/#get-devices).
+
 ### Daily Activity Summary
 
 (to do)
